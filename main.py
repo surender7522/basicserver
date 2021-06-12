@@ -1,11 +1,11 @@
 import json
 import os
-
+import time
 import requests
 from fastapi import BackgroundTasks, FastAPI
 
 app = FastAPI()
-url = os.getenv("url", "")
+url = "10.128.0.17"
 
 
 def authorize():
@@ -15,11 +15,16 @@ def authorize():
                 "methods": ["password"],
                 "password": {
                     "user": {
-                        "name": "admin",
-                        "domain": {"id": "default"},
+                        "id": "10434be3e560454d862d9bb911b86762",
                         "password": "secret",
                     }
                 },
+
+            },
+            "scope": {
+                "system": {
+                    "all": True
+                }
             }
         }
     }
@@ -29,21 +34,24 @@ def authorize():
     print(r.status_code)
     print(r.headers)
     print(type(r.headers))
+    print(r.json())
     return r.headers.get("X-Subject-Token", "")
 
 
-def write_notification(uid: str):
+def write_notification(uid: str, tag: str):
     token = authorize()
     x = {
         "events": [
             {
-                "name": "network-changed",
+                "name": "custom",
                 "server_uuid": uid,
-                "tag": uid,
+                "tag": tag,
                 "status": "completed",
             }
         ]
     }
+    print("uuid {0}".format(uid))
+    time.sleep(3)
     headers = {"X-Auth-Token": token}
     r = requests.post(
         "http://{0}/compute/v2.1/os-server-external-events".format(url),
@@ -55,14 +63,12 @@ def write_notification(uid: str):
     print(r.json())
 
 
-@app.get("/{uid}")
-async def root(uid: str, background_tasks: BackgroundTasks):
-    background_tasks.add_task(write_notification, uid=uid)
+@app.get("/{uid}/{tag}")
+async def root(uid: str, tag: str,  background_tasks: BackgroundTasks):
+    background_tasks.add_task(write_notification, uid=uid,tag=tag)
     return {"message": "token", "uid": uid}
 
 
-@app.post("/{uid}")
-async def root(uid: str, background_tasks: BackgroundTasks):
-    background_tasks.add_task(write_notification, uid=uid)
-
-    return {"message": "token", "uid": uid}
+@app.post("/{uid}/{tag}")
+async def root(uid: str,tag: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(write_notification, uid=uid,tag=tag)
