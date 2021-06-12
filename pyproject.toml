@@ -8,6 +8,7 @@ authors = ["surender <surender sslamba10@gmail.com>"]
 python = "^3.7"
 fastapi = "^0.65.2"
 Hypercorn = "^0.11.2"
+requests = "^2.25.1"
 
 [tool.poetry.dev-dependencies]
 
